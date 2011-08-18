@@ -1,0 +1,97 @@
+/*
+ * Copyright (c) 2011, Marcus Bergstrom and The haXe Project Contributors
+ * All rights reserved.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *   - Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   - Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer in the
+ *     documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE HAXE PROJECT CONTRIBUTORS "AS IS" AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE HAXE PROJECT CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+ * DAMAGE.
+ */
+
+This is a work-in-progress XML SAX Parser for haXe.
+
+There are some issues that will be dealt with in time.
+- Possible utf8 issues.
+- CData.
+- Namespaces in attributes.
+
+Example:
+
+<?xml version="1.0" encoding="utf-8"?>
+<entry xmlns="http://www.w3.org/2005/Atom" xmlns:ab="http://www.someurl.com/2011/ab">
+	<id>urn:uuid:f2265e60-c9d6-11e0-9572-0800200c9a66</id>
+	<title type="text">Some Title</title>
+	<updated>2010-08-27T14:28:53Z</updated>
+	<published>1970-01-01T00:59:59Z</published>
+	<author id="12">
+		<name>John Adams</name>
+		<uri>http://www.someurl.com</uri>
+		<email>john@someurl.com</email>
+	</author>
+	<summary type="text" />
+	<ab:group members="4">
+		<member age="34">Adam</member>
+		<member age="28">Bert</member>
+	</ab:group>
+</entry>
+
+
+public function testBasic() {
+	var parser:XMLSAXParser = new XMLSAXParser(xml);
+	var author:Author = null;
+	var currentTag:String = "";	
+			
+	parser.onProlog = function(str:String):Void {
+	}
+	
+	parser.onStartTag = function(tag:String, ns:String):Bool {
+		if (tag == "author")
+			author = new Author();
+
+		currentTag = tag;
+		return true; // Returning false will stop parsing for this node.
+	}
+	
+	parser.onEndTag = function(tag:String, ns:String):Void {
+	}
+	
+	parser.onAttr = function(key:String, val:String, ns:String):Void {
+		if (currentTag == "author" && key == "id") {
+			author.id = val;
+		}
+	}
+	
+	parser.onData = function(data:String):Void {
+		switch(currentTag) {
+			case "name":
+				author.name = data;
+			case "uri":
+				author.uri = data;
+			case "email":
+				author.email = data;
+		}
+	}
+
+	parser.start();			
+	assertEquals("12", author.id);
+	assertEquals("John Adams", author.name);
+	assertEquals("http://www.someurl.com", author.uri);
+	assertEquals("john@someurl.com", author.email);
+}
+
+parser.start();
